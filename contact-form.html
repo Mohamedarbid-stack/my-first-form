@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تواصل معنا</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f7;--card:#fff;--ink:#14213d;--muted:#5b6b85;--line:#d5dce8;--accent:#2f5bea;--accent-d:#2447c2;--ok:#12805c;--err:#c2334d}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1626;--card:#16223a;--ink:#eaf0fb;--muted:#9aa9c4;--line:#2b3a58;--accent:#6b8cff;--accent-d:#8aa4ff;--ok:#4ad8a3;--err:#ff7b94}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
+.card{width:100%;max-width:460px;background:var(--card);border-radius:20px;padding:36px 32px;box-shadow:0 20px 50px rgba(20,33,61,.12)}
+h1{margin:0 0 6px;font-size:1.7rem}
+p.sub{margin:0 0 26px;color:var(--muted);line-height:1.7}
+label{display:block;margin:0 0 6px;font-weight:500;font-size:.95rem}
+.field{margin-bottom:18px}
+input,textarea{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font:inherit;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+textarea{min-height:130px;resize:vertical}
+input[type=tel]{direction:ltr;text-align:right}
+button{width:100%;padding:14px;border:0;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:background .15s}
+button:hover{background:var(--accent-d)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+button:disabled{opacity:.6;cursor:wait}
+#status{margin-top:16px;padding:12px 14px;border-radius:12px;font-weight:500;display:none}
+#status.ok{display:block;background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+#status.err{display:block;background:color-mix(in srgb,var(--err) 14%,transparent);color:var(--err)}
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>تواصل معنا</h1>
+  <p class="sub">اترك بياناتك ورسالتك وسنرد عليك في أقرب وقت.</p>
+  <form id="form" novalidate>
+    <div class="field">
+      <label for="name">الاسم</label>
+      <input id="name" name="name" type="text" autocomplete="name" required>
+    </div>
+    <div class="field">
+      <label for="phone">رقم الهاتف</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+    </div>
+    <div class="field">
+      <label for="message">الرسالة</label>
+      <textarea id="message" name="message" required></textarea>
+    </div>
+    <button id="submit" type="submit">إرسال الرسالة</button>
+    <div id="status" role="status" aria-live="polite"></div>
+  </form>
+</main>
+<script>
+const WEBHOOK_URL = "https://mohadz18.app.n8n.cloud/webhook-test/ec8106b3-c673-44b4-a565-2607b6d36638";
+const form = document.getElementById("form");
+const btn = document.getElementById("submit");
+const status = document.getElementById("status");
+
+function show(type, text){ status.className = type; status.textContent = text; }
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = {
+    name: form.name.value.trim(),
+    phone: form.phone.value.trim(),
+    message: form.message.value.trim()
+  };
+  if (!data.name || !data.phone || !data.message) {
+    show("err", "يرجى تعبئة جميع الحقول.");
+    return;
+  }
+  if (!/^[+\d][\d\s()-]{6,}$/.test(data.phone)) {
+    show("err", "رقم الهاتف غير صالح.");
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "جارٍ الإرسال...";
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    show("ok", "تم إرسال رسالتك بنجاح. شكراً لتواصلك معنا!");
+    form.reset();
+  } catch (err) {
+    show("err", "تعذّر إرسال الرسالة. حاول مرة أخرى بعد قليل.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "إرسال الرسالة";
+  }
+});
+</script>
+</body>
+</html>
